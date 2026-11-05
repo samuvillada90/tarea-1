@@ -1,361 +1,504 @@
+"use strict";
+
 /* ==========================================================
-   Taller 9 - Aplicación del Clima
+   Taller 10 - Sistema de Gestión de Gastos Personales
    Universidad de Caldas - Programación Web Creativa II
    ========================================================== */
 
-"use strict";
+/* ---------- 1. Constantes y estado de la aplicación ---------- */
+const CLAVE_ALMACENAMIENTO = "taller10_gastos_transacciones";
+const VALOR_MAXIMO = 999999999;
+const TIEMPO_AVISO = 4000;
 
-/* ----------------------------------------------------------
-   1. DATOS: estados del clima y base de datos de ciudades
-   ---------------------------------------------------------- */
-
-// Objeto que relaciona cada estado del clima con su texto y su ícono Unicode
-const ESTADOS = {
-  soleado:  { texto: "Soleado",              icono: "☀️" },
-  parcial:  { texto: "Parcialmente nublado", icono: "⛅" },
-  nublado:  { texto: "Nublado",              icono: "☁️" },
-  lluvia:   { texto: "Lluvia",               icono: "🌧️" },
-  tormenta: { texto: "Tormenta eléctrica",   icono: "⛈️" },
-  nieve:    { texto: "Nevadas",              icono: "❄️" },
-  niebla:   { texto: "Niebla",               icono: "🌫️" }
+const CATEGORIAS = {
+  ingreso: ["Salario", "Freelance", "Ventas", "Inversiones", "Otros ingresos"],
+  gasto: [
+    "Alimentación",
+    "Transporte",
+    "Vivienda",
+    "Servicios",
+    "Educación",
+    "Salud",
+    "Entretenimiento",
+    "Otros gastos"
+  ]
 };
 
-// Array de objetos: cada ciudad tiene datos meteorológicos simulados
-const ciudades = [
-  {
-    nombre: "Manizales", pais: "Colombia", clave: "parcial",
-    temperatura: 17, sensacion: 16, humedad: 82, viento: 12
-  },
-  {
-    nombre: "Bogotá", pais: "Colombia", clave: "nublado",
-    temperatura: 14, sensacion: 12, humedad: 75, viento: 15
-  },
-  {
-    nombre: "Medellín", pais: "Colombia", clave: "parcial",
-    temperatura: 24, sensacion: 25, humedad: 68, viento: 9
-  },
-  {
-    nombre: "Cali", pais: "Colombia", clave: "soleado",
-    temperatura: 28, sensacion: 30, humedad: 65, viento: 11
-  },
-  {
-    nombre: "Cartagena", pais: "Colombia", clave: "soleado",
-    temperatura: 31, sensacion: 36, humedad: 78, viento: 20
-  },
-  {
-    nombre: "Barranquilla", pais: "Colombia", clave: "soleado",
-    temperatura: 32, sensacion: 37, humedad: 74, viento: 22
-  },
-  {
-    nombre: "Bucaramanga", pais: "Colombia", clave: "parcial",
-    temperatura: 26, sensacion: 27, humedad: 60, viento: 10
-  },
-  {
-    nombre: "Pereira", pais: "Colombia", clave: "lluvia",
-    temperatura: 22, sensacion: 22, humedad: 77, viento: 8
-  },
-  {
-    nombre: "Santa Marta", pais: "Colombia", clave: "soleado",
-    temperatura: 30, sensacion: 34, humedad: 76, viento: 18
-  },
-  {
-    nombre: "Madrid", pais: "España", clave: "nublado",
-    temperatura: 12, sensacion: 10, humedad: 58, viento: 14
-  },
-  {
-    nombre: "Ciudad de México", pais: "México", clave: "parcial",
-    temperatura: 19, sensacion: 18, humedad: 52, viento: 10
-  },
-  {
-    nombre: "Buenos Aires", pais: "Argentina", clave: "lluvia",
-    temperatura: 16, sensacion: 15, humedad: 70, viento: 19
-  },
-  {
-    nombre: "Londres", pais: "Reino Unido", clave: "lluvia",
-    temperatura: 9, sensacion: 6, humedad: 85, viento: 24
-  },
-  {
-    nombre: "Nueva York", pais: "Estados Unidos", clave: "nublado",
-    temperatura: 7, sensacion: 3, humedad: 55, viento: 27
-  },
-  {
-    nombre: "Miami", pais: "Estados Unidos", clave: "tormenta",
-    temperatura: 29, sensacion: 34, humedad: 85, viento: 21
-  },
-  {
-    nombre: "San Francisco", pais: "Estados Unidos", clave: "niebla",
-    temperatura: 13, sensacion: 12, humedad: 90, viento: 11
-  },
-  {
-    nombre: "Tokio", pais: "Japón", clave: "soleado",
-    temperatura: 15, sensacion: 14, humedad: 62, viento: 13
-  },
-  {
-    nombre: "Reikiavik", pais: "Islandia", clave: "nieve",
-    temperatura: -2, sensacion: -8, humedad: 80, viento: 35
-  }
-];
+const estado = {
+  transacciones: [],
+  filtroActivo: "todos"
+};
 
-// Ciudades que aparecerán como botones de sugerencia
-const CIUDADES_SUGERIDAS = [
-  "Manizales", "Bogotá", "Cartagena", "Londres", "Reikiavik", "Miami"
-];
-
-/* ----------------------------------------------------------
-   2. REFERENCIAS AL DOM
-   ---------------------------------------------------------- */
-const campoCiudad = document.getElementById("campoCiudad");
-const botonConsultar = document.getElementById("botonConsultar");
-const listaCiudades = document.getElementById("listaCiudades");
-const mensajeError = document.getElementById("mensajeError");
-const contenedorSugerencias = document.getElementById("contenedorSugerencias");
-const mensajeInicial = document.getElementById("mensajeInicial");
-const resultado = document.getElementById("resultado");
-const tarjetaPrincipal = document.getElementById("tarjetaPrincipal");
-const nombreCiudad = document.getElementById("nombreCiudad");
-const nombrePais = document.getElementById("nombrePais");
-const fechaActual = document.getElementById("fechaActual");
-const estadoClima = document.getElementById("estadoClima");
-const iconoClima = document.getElementById("iconoClima");
-const temperatura = document.getElementById("temperatura");
-const sensacion = document.getElementById("sensacion");
-const humedad = document.getElementById("humedad");
-const barraHumedad = document.getElementById("barraHumedad");
-const viento = document.getElementById("viento");
-const listaPronostico = document.getElementById("listaPronostico");
-
-/* ----------------------------------------------------------
-   3. FUNCIONES DE APOYO
-   ---------------------------------------------------------- */
-
-// Convierte un texto a minúsculas y le quita las tildes (para comparar sin errores)
-function normalizarTexto(texto) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-// Valida el campo de búsqueda. Devuelve un mensaje de error o "" si todo está bien
-function validarCampo(valor) {
-  const texto = valor.trim();
-
-  if (texto === "") {
-    return "Escribe el nombre de una ciudad para consultar el clima.";
-  }
-  if (texto.length < 2) {
-    return "El nombre de la ciudad debe tener al menos 2 caracteres.";
-  }
-  if (!/^[\p{L}\s.'-]+$/u.test(texto)) {
-    return "Usa únicamente letras. No se permiten números ni símbolos.";
-  }
-  return "";
-}
-
-// Busca una ciudad: primero por nombre exacto y luego por coincidencia al inicio
-function buscarCiudad(nombre) {
-  const buscado = normalizarTexto(nombre);
-
-  const exacta = ciudades.find(function (ciudad) {
-    return normalizarTexto(ciudad.nombre) === buscado;
-  });
-
-  if (exacta) {
-    return exacta;
-  }
-
-  return ciudades.find(function (ciudad) {
-    return normalizarTexto(ciudad.nombre).startsWith(buscado);
-  });
-}
-
-// Devuelve la fecha actual en español con la primera letra en mayúscula
-function obtenerFechaActual() {
-  const fecha = new Date().toLocaleDateString("es-CO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long"
-  });
-  return fecha.charAt(0).toUpperCase() + fecha.slice(1);
-}
-
-/* ----------------------------------------------------------
-   4. MENSAJES DE ERROR
-   ---------------------------------------------------------- */
-
-// Muestra un mensaje de error debajo del buscador
-function mostrarError(mensaje) {
-  mensajeError.textContent = mensaje;
-  mensajeError.hidden = false;
-  campoCiudad.classList.add("buscador__campo--error");
-}
-
-// Oculta el mensaje de error
-function ocultarError() {
-  mensajeError.hidden = true;
-  mensajeError.textContent = "";
-  campoCiudad.classList.remove("buscador__campo--error");
-}
-
-/* ----------------------------------------------------------
-   5. PRESENTACIÓN DE RESULTADOS (manipulación del DOM)
-   ---------------------------------------------------------- */
-
-// Crea las tarjetas del pronóstico simulado de cinco días
-function pintarPronostico(ciudad) {
-  const secuencia = [
-    "soleado", "parcial", "nublado", "lluvia", "parcial", "soleado", "nublado"
-  ];
-  const variaciones = [2, 1, -1, 0, 3];
-
-  listaPronostico.innerHTML = "";
-
-  for (let i = 1; i <= 5; i++) {
-    const fecha = new Date();
-    fecha.setDate(fecha.getDate() + i);
-
-    const clave = secuencia[(i + ciudad.nombre.length) % secuencia.length];
-    const maxima = ciudad.temperatura + 3 + variaciones[i - 1];
-    const minima = ciudad.temperatura - 4 + variaciones[i - 1];
-
-    const dia = document.createElement("article");
-    dia.className = "dia";
-    const nombreDia = fecha.toLocaleDateString("es-CO", { weekday: "short" });
-
-    dia.innerHTML =
-      '<p class="dia__nombre">' + nombreDia + "</p>" +
-      '<p class="dia__icono">' + ESTADOS[clave].icono + "</p>" +
-      '<p class="dia__maxima">' + maxima + "°C</p>" +
-      '<p class="dia__minima">' + minima + "°C</p>";
-
-    listaPronostico.appendChild(dia);
-  }
-}
-
-// Muestra en pantalla toda la información de la ciudad encontrada
-function mostrarClima(ciudad) {
-  const estado = ESTADOS[ciudad.clave];
-
-  nombreCiudad.textContent = ciudad.nombre;
-  nombrePais.textContent = ciudad.pais;
-  fechaActual.textContent = obtenerFechaActual();
-  estadoClima.textContent = estado.texto;
-  iconoClima.textContent = estado.icono;
-  temperatura.textContent = ciudad.temperatura;
-  sensacion.textContent = ciudad.sensacion;
-  humedad.textContent = ciudad.humedad;
-  viento.textContent = ciudad.viento;
-
-  // El atributo data-clima cambia el color de la tarjeta desde CSS
-  tarjetaPrincipal.dataset.clima = ciudad.clave;
-
-  // La barra de humedad se llena según el porcentaje
-  barraHumedad.style.width = ciudad.humedad + "%";
-
-  pintarPronostico(ciudad);
-
-  // Se oculta el mensaje inicial y se muestra el resultado con una animación
-  mensajeInicial.hidden = true;
-  resultado.hidden = false;
-  resultado.classList.remove("resultado--animar");
-  void resultado.offsetWidth; // Reinicia la animación CSS
-  resultado.classList.add("resultado--animar");
-}
-
-/* ----------------------------------------------------------
-   6. FUNCIÓN PRINCIPAL DE CONSULTA
-   ---------------------------------------------------------- */
-function consultarClima() {
-  const valor = campoCiudad.value;
-  const errorValidacion = validarCampo(valor);
-
-  // 1) Validar el campo
-  if (errorValidacion !== "") {
-    resultado.hidden = true;
-    mensajeInicial.hidden = false;
-    mostrarError(errorValidacion);
-    return;
-  }
-
-  // 2) Buscar la ciudad en el array
-  const ciudad = buscarCiudad(valor);
-
-  // 3) Si no existe, informar al usuario
-  if (!ciudad) {
-    const ejemplos = ciudades.slice(0, 4).map(function (c) {
-      return c.nombre;
-    }).join(", ");
-
-    resultado.hidden = true;
-    mensajeInicial.hidden = false;
-    mostrarError(
-      'No encontramos la ciudad "' + valor.trim() + '". Prueba con: ' + ejemplos + "..."
-    );
-    return;
-  }
-
-  // 4) Si existe, mostrar el clima
-  ocultarError();
-  campoCiudad.value = ciudad.nombre;
-  mostrarClima(ciudad);
-}
-
-/* ----------------------------------------------------------
-   7. PREPARACIÓN DE LA INTERFAZ
-   ---------------------------------------------------------- */
-
-// Llena la lista de autocompletado del campo de texto
-function cargarListaCiudades() {
-  ciudades.forEach(function (ciudad) {
-    const opcion = document.createElement("option");
-    opcion.value = ciudad.nombre;
-    listaCiudades.appendChild(opcion);
-  });
-}
-
-// Crea los botones de ciudades sugeridas
-function crearSugerencias() {
-  CIUDADES_SUGERIDAS.forEach(function (nombre) {
-    const boton = document.createElement("button");
-    boton.type = "button";
-    boton.className = "sugerencia";
-    boton.textContent = nombre;
-
-    // Evento click: coloca el nombre en el campo y consulta
-    boton.addEventListener("click", function () {
-      campoCiudad.value = nombre;
-      consultarClima();
-    });
-
-    contenedorSugerencias.appendChild(boton);
-  });
-}
-
-/* ----------------------------------------------------------
-   8. EVENTOS
-   ---------------------------------------------------------- */
-
-// Evento click del botón principal
-botonConsultar.addEventListener("click", consultarClima);
-
-// Eventos de teclado: Enter consulta y Escape limpia el campo
-campoCiudad.addEventListener("keydown", function (evento) {
-  if (evento.key === "Enter") {
-    consultarClima();
-  }
-  if (evento.key === "Escape") {
-    campoCiudad.value = "";
-    ocultarError();
-  }
+const formatoMoneda = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
 });
 
-// Al escribir, se borra el mensaje de error anterior
-campoCiudad.addEventListener("input", ocultarError);
+let temporizadorAviso = null;
 
-/* ----------------------------------------------------------
-   9. INICIO DE LA APLICACIÓN
-   ---------------------------------------------------------- */
-cargarListaCiudades();
-crearSugerencias();
-campoCiudad.focus();
+/* ---------- 2. Referencias al DOM ---------- */
+const dom = {
+  formulario: document.getElementById("formMovimiento"),
+  descripcion: document.getElementById("descripcion"),
+  tipo: document.getElementById("tipo"),
+  categoria: document.getElementById("categoria"),
+  valor: document.getElementById("valor"),
+  fecha: document.getElementById("fecha"),
+  btnLimpiar: document.getElementById("btnLimpiar"),
+  errores: {
+    descripcion: document.getElementById("errorDescripcion"),
+    tipo: document.getElementById("errorTipo"),
+    categoria: document.getElementById("errorCategoria"),
+    valor: document.getElementById("errorValor"),
+    fecha: document.getElementById("errorFecha")
+  },
+  aviso: document.getElementById("aviso"),
+  fechaActual: document.getElementById("fechaActual"),
+  saldoTotal: document.getElementById("saldoTotal"),
+  notaSaldo: document.getElementById("notaSaldo"),
+  tarjetaSaldo: document.querySelector(".tarjeta--saldo"),
+  totalIngresos: document.getElementById("totalIngresos"),
+  totalGastos: document.getElementById("totalGastos"),
+  totalMovimientos: document.getElementById("totalMovimientos"),
+  filtros: document.getElementById("filtros"),
+  tablaContenedor: document.getElementById("tablaContenedor"),
+  cuerpoTabla: document.getElementById("cuerpoTabla"),
+  mensajeVacio: document.getElementById("mensajeVacio")
+};
+
+/* ---------- 3. Funciones de utilidad ---------- */
+function obtenerFechaHoy() {
+  const ahora = new Date();
+  const anio = ahora.getFullYear();
+  const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+  const dia = String(ahora.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
+function formatearFecha(fechaISO) {
+  const [anio, mes, dia] = fechaISO.split("-");
+  return `${dia}/${mes}/${anio}`;
+}
+
+function esFechaValida(texto) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return false;
+  }
+  const [anio, mes, dia] = texto.split("-").map(Number);
+  const fecha = new Date(anio, mes - 1, dia);
+  return (
+    fecha.getFullYear() === anio &&
+    fecha.getMonth() === mes - 1 &&
+    fecha.getDate() === dia
+  );
+}
+
+function redondear(numero) {
+  return Math.round((numero + Number.EPSILON) * 100) / 100;
+}
+
+function generarId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/* ---------- 4. LocalStorage: guardar y recuperar ---------- */
+function esTransaccionValida(t) {
+  return (
+    t !== null &&
+    typeof t === "object" &&
+    typeof t.id === "string" &&
+    typeof t.descripcion === "string" &&
+    typeof t.valor === "number" &&
+    Number.isFinite(t.valor) &&
+    t.valor > 0 &&
+    (t.tipo === "ingreso" || t.tipo === "gasto") &&
+    typeof t.categoria === "string" &&
+    typeof t.fecha === "string" &&
+    esFechaValida(t.fecha)
+  );
+}
+
+function cargarTransacciones() {
+  try {
+    const guardado = localStorage.getItem(CLAVE_ALMACENAMIENTO);
+    if (guardado === null) {
+      return [];
+    }
+    const datos = JSON.parse(guardado);
+    return Array.isArray(datos) ? datos.filter(esTransaccionValida) : [];
+  } catch (error) {
+    console.error("No fue posible leer LocalStorage:", error);
+    return [];
+  }
+}
+
+function guardarTransacciones() {
+  try {
+    localStorage.setItem(
+      CLAVE_ALMACENAMIENTO,
+      JSON.stringify(estado.transacciones)
+    );
+    return true;
+  } catch (error) {
+    console.error("No fue posible guardar en LocalStorage:", error);
+    mostrarAviso("No se pudo guardar la información en el navegador.", "error");
+    return false;
+  }
+}
+
+/* ---------- 5. Avisos y mensajes de error ---------- */
+function mostrarAviso(texto, tipo) {
+  clearTimeout(temporizadorAviso);
+  dom.aviso.textContent = texto;
+  dom.aviso.className = `aviso aviso--${tipo}`;
+  dom.aviso.hidden = false;
+  temporizadorAviso = setTimeout(() => {
+    dom.aviso.hidden = true;
+  }, TIEMPO_AVISO);
+}
+
+function mostrarErrores(errores) {
+  Object.keys(dom.errores).forEach((campo) => {
+    const mensaje = errores[campo] || "";
+    const contenedor = dom[campo].closest(".campo");
+    dom.errores[campo].textContent = mensaje;
+    contenedor.classList.toggle("campo--error", mensaje !== "");
+    dom[campo].setAttribute("aria-invalid", mensaje !== "" ? "true" : "false");
+  });
+}
+
+function limpiarErrorCampo(campo) {
+  dom.errores[campo].textContent = "";
+  dom[campo].closest(".campo").classList.remove("campo--error");
+  dom[campo].setAttribute("aria-invalid", "false");
+}
+
+/* ---------- 6. Categorías dependientes del tipo ---------- */
+function llenarCategorias(tipo) {
+  const lista = CATEGORIAS[tipo];
+  dom.categoria.innerHTML = "";
+
+  const inicial = document.createElement("option");
+  inicial.value = "";
+  inicial.textContent = lista
+    ? "Selecciona una categoría"
+    : "Primero selecciona el tipo";
+  dom.categoria.appendChild(inicial);
+
+  if (lista) {
+    lista.forEach((nombre) => {
+      const opcion = document.createElement("option");
+      opcion.value = nombre;
+      opcion.textContent = nombre;
+      dom.categoria.appendChild(opcion);
+    });
+  }
+  dom.categoria.disabled = !lista;
+}
+
+/* ---------- 7. Validación del formulario ---------- */
+function validarFormulario() {
+  const errores = {};
+  const descripcion = dom.descripcion.value.trim().replace(/\s+/g, " ");
+  const tipo = dom.tipo.value;
+  const categoria = dom.categoria.value;
+  const textoValor = dom.valor.value.trim();
+  const fecha = dom.fecha.value;
+  let valor = NaN;
+
+  if (descripcion === "") {
+    errores.descripcion = "La descripción es obligatoria.";
+  } else if (descripcion.length < 3) {
+    errores.descripcion = "Escribe al menos 3 caracteres.";
+  } else if (descripcion.length > 60) {
+    errores.descripcion = "Máximo 60 caracteres.";
+  }
+
+  if (dom.valor.validity.badInput) {
+    errores.valor = "Ingresa un valor numérico válido.";
+  } else if (textoValor === "") {
+    errores.valor = "El valor es obligatorio.";
+  } else {
+    valor = Number(textoValor);
+    if (!Number.isFinite(valor)) {
+      errores.valor = "Ingresa un valor numérico válido.";
+    } else if (valor <= 0) {
+      errores.valor = "El valor debe ser mayor que cero.";
+    } else if (valor > VALOR_MAXIMO) {
+      errores.valor = "El valor es demasiado grande.";
+    }
+  }
+
+  if (tipo !== "ingreso" && tipo !== "gasto") {
+    errores.tipo = "Selecciona el tipo de movimiento.";
+  } else if (categoria === "") {
+    errores.categoria = "Selecciona una categoría.";
+  } else if (!CATEGORIAS[tipo].includes(categoria)) {
+    errores.categoria = "La categoría no corresponde al tipo.";
+  }
+
+  if (fecha === "") {
+    errores.fecha = "La fecha es obligatoria.";
+  } else if (!esFechaValida(fecha)) {
+    errores.fecha = "La fecha no es válida.";
+  } else if (fecha > obtenerFechaHoy()) {
+    errores.fecha = "La fecha no puede ser futura.";
+  }
+
+  return {
+    valido: Object.keys(errores).length === 0,
+    errores: errores,
+    datos: { descripcion, tipo, categoria, valor: redondear(valor), fecha }
+  };
+}
+
+/* ---------- 8. Operaciones sobre las transacciones ---------- */
+function agregarTransaccion(datos) {
+  const nueva = {
+    id: generarId(),
+    creado: Date.now(),
+    descripcion: datos.descripcion,
+    tipo: datos.tipo,
+    categoria: datos.categoria,
+    valor: datos.valor,
+    fecha: datos.fecha
+  };
+  estado.transacciones.push(nueva);
+}
+
+function eliminarTransaccion(id) {
+  const objetivo = estado.transacciones.find((t) => t.id === id);
+  if (!objetivo) {
+    return;
+  }
+  const confirmado = window.confirm(
+    `¿Deseas eliminar el movimiento "${objetivo.descripcion}"?`
+  );
+  if (!confirmado) {
+    return;
+  }
+  estado.transacciones = estado.transacciones.filter((t) => t.id !== id);
+  const guardado = guardarTransacciones();
+  renderizarTodo();
+  if (guardado) {
+    mostrarAviso("Movimiento eliminado correctamente.", "exito");
+  }
+}
+
+function calcularTotales() {
+  const sumar = (tipo) =>
+    estado.transacciones
+      .filter((t) => t.tipo === tipo)
+      .reduce((acumulado, t) => acumulado + t.valor, 0);
+
+  const ingresos = redondear(sumar("ingreso"));
+  const gastos = redondear(sumar("gasto"));
+  return {
+    ingresos: ingresos,
+    gastos: gastos,
+    saldo: redondear(ingresos - gastos),
+    cantidad: estado.transacciones.length
+  };
+}
+
+function obtenerTransaccionesVisibles() {
+  const lista =
+    estado.filtroActivo === "todos"
+      ? [...estado.transacciones]
+      : estado.transacciones.filter((t) => t.tipo === estado.filtroActivo);
+
+  return lista.sort((a, b) => {
+    if (a.fecha !== b.fecha) {
+      return a.fecha < b.fecha ? 1 : -1;
+    }
+    return (b.creado || 0) - (a.creado || 0);
+  });
+}
+
+/* ---------- 9. Renderizado de la interfaz ---------- */
+function renderizarResumen() {
+  const totales = calcularTotales();
+  dom.saldoTotal.textContent = formatoMoneda.format(totales.saldo);
+  dom.totalIngresos.textContent = formatoMoneda.format(totales.ingresos);
+  dom.totalGastos.textContent = formatoMoneda.format(totales.gastos);
+  dom.totalMovimientos.textContent = String(totales.cantidad);
+
+  const negativo = totales.saldo < 0;
+  dom.tarjetaSaldo.classList.toggle("saldo-negativo", negativo);
+  dom.notaSaldo.textContent = negativo
+    ? "Tus gastos superan tus ingresos"
+    : "Ingresos menos gastos";
+}
+
+function crearCelda(texto, etiqueta, clase) {
+  const celda = document.createElement("td");
+  celda.setAttribute("data-label", etiqueta);
+  celda.textContent = texto;
+  if (clase) {
+    celda.className = clase;
+  }
+  return celda;
+}
+
+function crearFila(transaccion) {
+  const fila = document.createElement("tr");
+  const esIngreso = transaccion.tipo === "ingreso";
+
+  fila.appendChild(crearCelda(formatearFecha(transaccion.fecha), "Fecha"));
+  fila.appendChild(crearCelda(transaccion.descripcion, "Descripción"));
+  fila.appendChild(crearCelda(transaccion.categoria, "Categoría"));
+
+  const celdaTipo = document.createElement("td");
+  celdaTipo.setAttribute("data-label", "Tipo");
+  const insignia = document.createElement("span");
+  insignia.className = `insignia insignia--${transaccion.tipo}`;
+  insignia.textContent = esIngreso ? "Ingreso" : "Gasto";
+  celdaTipo.appendChild(insignia);
+  fila.appendChild(celdaTipo);
+
+  const signo = esIngreso ? "+ " : "- ";
+  fila.appendChild(
+    crearCelda(
+      signo + formatoMoneda.format(transaccion.valor),
+      "Valor",
+      `celda-valor valor--${transaccion.tipo}`
+    )
+  );
+
+  const celdaAccion = document.createElement("td");
+  celdaAccion.setAttribute("data-label", "Acción");
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "btn-eliminar";
+  boton.textContent = "Eliminar";
+  boton.setAttribute("data-id", transaccion.id);
+  boton.setAttribute(
+    "aria-label",
+    `Eliminar el movimiento ${transaccion.descripcion}`
+  );
+  celdaAccion.appendChild(boton);
+  fila.appendChild(celdaAccion);
+
+  return fila;
+}
+
+function renderizarTabla() {
+  const visibles = obtenerTransaccionesVisibles();
+  dom.cuerpoTabla.innerHTML = "";
+  visibles.forEach((transaccion) => {
+    dom.cuerpoTabla.appendChild(crearFila(transaccion));
+  });
+
+  const hayDatos = visibles.length > 0;
+  dom.tablaContenedor.hidden = !hayDatos;
+  dom.mensajeVacio.hidden = hayDatos;
+
+  if (!hayDatos) {
+    dom.mensajeVacio.textContent =
+      estado.transacciones.length === 0
+        ? "Aún no hay movimientos. Registra tu primer ingreso o gasto."
+        : "No hay movimientos de este tipo para mostrar.";
+  }
+}
+
+function renderizarFiltros() {
+  dom.filtros.querySelectorAll("[data-filtro]").forEach((boton) => {
+    const activo = boton.dataset.filtro === estado.filtroActivo;
+    boton.classList.toggle("activo", activo);
+    boton.setAttribute("aria-pressed", String(activo));
+  });
+}
+
+function renderizarTodo() {
+  renderizarResumen();
+  renderizarFiltros();
+  renderizarTabla();
+}
+
+/* ---------- 10. Manejadores de eventos ---------- */
+function limpiarFormulario() {
+  dom.formulario.reset();
+  dom.fecha.value = obtenerFechaHoy();
+  llenarCategorias("");
+  mostrarErrores({});
+}
+
+function manejarEnvio(evento) {
+  evento.preventDefault();
+  const resultado = validarFormulario();
+  mostrarErrores(resultado.errores);
+
+  if (!resultado.valido) {
+    mostrarAviso("Revisa los campos marcados en rojo.", "error");
+    const primerCampo = Object.keys(resultado.errores)[0];
+    dom[primerCampo].focus();
+    return;
+  }
+
+  agregarTransaccion(resultado.datos);
+  const guardado = guardarTransacciones();
+  limpiarFormulario();
+  renderizarTodo();
+  if (guardado) {
+    mostrarAviso("Movimiento registrado correctamente.", "exito");
+  }
+}
+
+function manejarCambioTipo() {
+  llenarCategorias(dom.tipo.value);
+  limpiarErrorCampo("tipo");
+  limpiarErrorCampo("categoria");
+}
+
+function manejarClicFiltros(evento) {
+  const boton = evento.target.closest("[data-filtro]");
+  if (!boton) {
+    return;
+  }
+  estado.filtroActivo = boton.dataset.filtro;
+  renderizarFiltros();
+  renderizarTabla();
+}
+
+function manejarClicTabla(evento) {
+  const boton = evento.target.closest(".btn-eliminar");
+  if (!boton) {
+    return;
+  }
+  eliminarTransaccion(boton.dataset.id);
+}
+
+function registrarEventos() {
+  dom.formulario.addEventListener("submit", manejarEnvio);
+  dom.tipo.addEventListener("change", manejarCambioTipo);
+  dom.btnLimpiar.addEventListener("click", limpiarFormulario);
+  dom.filtros.addEventListener("click", manejarClicFiltros);
+  dom.cuerpoTabla.addEventListener("click", manejarClicTabla);
+
+  ["descripcion", "categoria", "valor", "fecha"].forEach((campo) => {
+    dom[campo].addEventListener("input", () => limpiarErrorCampo(campo));
+    dom[campo].addEventListener("change", () => limpiarErrorCampo(campo));
+  });
+}
+
+/* ---------- 11. Inicio de la aplicación ---------- */
+function iniciar() {
+  const hoy = obtenerFechaHoy();
+  dom.fecha.max = hoy;
+  dom.fecha.value = hoy;
+  dom.fechaActual.textContent = new Date().toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
+  llenarCategorias("");
+  estado.transacciones = cargarTransacciones();
+  registrarEventos();
+  renderizarTodo();
+}
+
+iniciar();
