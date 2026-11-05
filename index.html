@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de tareas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <h1>Lista de tareas</h1>
+ 
+    <form id="formTarea" class="formulario">
+      <input type="text" id="inputTarea" placeholder="Escribe una tarea..."
+        maxlength="80" autocomplete="off" required>
+      <button type="submit">Agregar</button>
+    </form>
+ 
+    <ul id="listaTareas"></ul>
+    <p id="mensajeVacio">No hay tareas pendientes. ¡Agrega la primera!</p>
+  </main>
+ 
+  <script src="script.js"></script>
+</body>
+</html>
