@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lista de tareas</title>
+  <title>El recolector de manzanas</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app">
-    <h1>Lista de tareas</h1>
- 
-    <form id="formTarea" class="formulario">
-      <input type="text" id="inputTarea" placeholder="Escribe una tarea..."
-        maxlength="80" autocomplete="off" required>
-      <button type="submit">Agregar</button>
-    </form>
- 
-    <ul id="listaTareas"></ul>
-    <p id="mensajeVacio">No hay tareas pendientes. ¡Agrega la primera!</p>
+  <main class="juego">
+    <h1>El recolector de manzanas</h1>
+
+    <div class="marcador">Puntos: <span id="puntos">0</span></div>
+
+    <div class="contenedor">
+      <!-- Aquí se dibuja el escenario con JavaScript -->
+      <canvas id="lienzo" width="800" height="450"></canvas>
+
+      <!-- Pantalla que aparece cuando el monstruo atrapa al personaje -->
+      <div id="final" class="oculto">
+        <h2>¡Juego terminado!</h2>
+        <p>Puntuación final: <span id="puntosFinal">0</span></p>
+        <button id="reiniciar">Volver a jugar</button>
+      </div>
+    </div>
+
+    <p class="ayuda">
+      Mover: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> o <kbd>A</kbd> <kbd>D</kbd>
+      &nbsp;|&nbsp;
+      Saltar: <kbd>Espacio</kbd> o <kbd>&uarr;</kbd>
+    </p>
   </main>
- 
+
   <script src="script.js"></script>
 </body>
 </html>
