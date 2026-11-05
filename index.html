@@ -1,36 +1,101 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- Codificación de caracteres y adaptación a dispositivos móviles -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>El recolector de manzanas</title>
+  <title>Taller 9 - Aplicación del Clima</title>
+
+  <!-- Enlace a la hoja de estilos externa -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="juego">
-    <h1>El recolector de manzanas</h1>
+  <main class="app">
 
-    <div class="marcador">Puntos: <span id="puntos">0</span></div>
+    <!-- Encabezado de la aplicación -->
+    <header class="encabezado">
+      <p class="encabezado__etiqueta">
+        Universidad de Caldas · Programación Web Creativa II
+      </p>
+      <h1 class="encabezado__titulo"><span aria-hidden="true">🌤️</span> Clima Express</h1>
+      <p class="encabezado__subtitulo">Consulta el clima simulado de diferentes ciudades</p>
+    </header>
 
-    <div class="contenedor">
-      <!-- Aquí se dibuja el escenario con JavaScript -->
-      <canvas id="lienzo" width="800" height="450"></canvas>
-
-      <!-- Pantalla que aparece cuando el monstruo atrapa al personaje -->
-      <div id="final" class="oculto">
-        <h2>¡Juego terminado!</h2>
-        <p>Puntuación final: <span id="puntosFinal">0</span></p>
-        <button id="reiniciar">Volver a jugar</button>
+    <!-- Buscador de ciudades -->
+    <section class="buscador" aria-label="Buscador de ciudades">
+      <label class="buscador__etiqueta" for="campoCiudad">Buscar ciudad</label>
+      <div class="buscador__fila">
+        <input id="campoCiudad" class="buscador__campo" type="text" list="listaCiudades"
+               placeholder="Ejemplo: Manizales" autocomplete="off" maxlength="40">
+        <datalist id="listaCiudades"></datalist>
+        <button id="botonConsultar" class="buscador__boton" type="button">
+          Consultar clima
+        </button>
       </div>
-    </div>
+      <p id="mensajeError" class="mensaje-error" role="alert" hidden></p>
+      <div class="sugerencias">
+        <span class="sugerencias__texto">Prueba con:</span>
+        <div id="contenedorSugerencias" class="sugerencias__lista"></div>
+      </div>
+    </section>
 
-    <p class="ayuda">
-      Mover: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> o <kbd>A</kbd> <kbd>D</kbd>
-      &nbsp;|&nbsp;
-      Saltar: <kbd>Espacio</kbd> o <kbd>&uarr;</kbd>
-    </p>
+    <!-- Mensaje inicial (visible antes de la primera consulta) -->
+    <section id="mensajeInicial" class="inicio">
+      <p class="inicio__icono" aria-hidden="true">🔍</p>
+      <p>Escribe el nombre de una ciudad y presiona <strong>Consultar clima</strong>.</p>
+    </section>
+
+    <!-- Resultado de la consulta (oculto hasta que exista una ciudad válida) -->
+    <section id="resultado" class="resultado" aria-live="polite" hidden>
+
+      <!-- Tarjeta principal: ciudad, estado y temperatura -->
+      <article id="tarjetaPrincipal" class="tarjeta-principal">
+        <div class="tarjeta-principal__info">
+          <h2 id="nombreCiudad" class="tarjeta-principal__ciudad"></h2>
+          <p id="nombrePais" class="tarjeta-principal__pais"></p>
+          <p id="fechaActual" class="tarjeta-principal__fecha"></p>
+          <p id="estadoClima" class="tarjeta-principal__estado"></p>
+        </div>
+        <div class="tarjeta-principal__clima">
+          <span id="iconoClima" class="tarjeta-principal__icono" aria-hidden="true"></span>
+          <p class="tarjeta-principal__temperatura"><span id="temperatura"></span>°C</p>
+        </div>
+      </article>
+
+      <!-- Tarjetas de detalle: sensación térmica, humedad y viento -->
+      <div class="detalles">
+        <article class="detalle">
+          <p class="detalle__icono" aria-hidden="true">🌡️</p>
+          <p class="detalle__titulo">Sensación térmica</p>
+          <p class="detalle__valor"><span id="sensacion"></span>°C</p>
+        </article>
+
+        <article class="detalle">
+          <p class="detalle__icono" aria-hidden="true">💧</p>
+          <p class="detalle__titulo">Humedad</p>
+          <p class="detalle__valor"><span id="humedad"></span>%</p>
+          <div class="barra"><div id="barraHumedad" class="barra__relleno"></div></div>
+        </article>
+
+        <article class="detalle">
+          <p class="detalle__icono" aria-hidden="true">💨</p>
+          <p class="detalle__titulo">Velocidad del viento</p>
+          <p class="detalle__valor"><span id="viento"></span> km/h</p>
+        </article>
+      </div>
+
+      <!-- Pronóstico simulado de cinco días -->
+      <section class="pronostico">
+        <h3 class="pronostico__titulo">Pronóstico de 5 días</h3>
+        <div id="listaPronostico" class="pronostico__lista"></div>
+      </section>
+    </section>
+
+    <footer class="pie">Datos simulados con fines educativos · Taller 9</footer>
   </main>
 
+  <!-- Enlace al archivo de JavaScript (al final para que el HTML ya exista) -->
   <script src="script.js"></script>
 </body>
 </html>
+
